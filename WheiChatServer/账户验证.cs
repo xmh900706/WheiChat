@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Net;
 using System.Net.Sockets;
+using Template;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace WheiChatServer
 {
@@ -58,8 +61,23 @@ namespace WheiChatServer
             {
                 int lenght = -1;
                 lenght = state.client.Receive(state.buffer);
-                
+                AccountTemplate template = new AccountTemplate();
+                template = Deserialize(state.buffer);
             }
+            catch
+            {
+                return;
+            }
+        }
+        public static AccountTemplate Deserialize(byte[] data)
+        {
+            MemoryStream ms = new MemoryStream();
+            ms.Write(data, 0, data.Length);
+            ms.Seek(0, SeekOrigin.Begin);
+            BinaryFormatter b = new BinaryFormatter();
+            Object objectTry = b.Deserialize(ms);
+            AccountTemplate template = objectTry as AccountTemplate;
+            return template;
         }
     }
     class StateObject
