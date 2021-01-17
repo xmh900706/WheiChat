@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using Template;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Data.SqlClient;
 
 namespace WheiChatServer
 {
@@ -69,7 +70,33 @@ namespace WheiChatServer
                 return;
             }
         }
-        public static AccountTemplate Deserialize(byte[] data)
+
+
+        ///<summary>
+        /// 序列化
+        /// </summary>
+        /// <param name="data">要序列化的对象</param>
+        /// <returns>返回存放序列化后的数据缓冲区</returns>
+        private static byte[] Serialize(object data)
+        {
+
+            //序列化并写入内存流
+            MemoryStream memoryStream = new MemoryStream();
+            BinaryFormatter binaryFormatter = new BinaryFormatter();
+            binaryFormatter.Serialize(memoryStream, data);
+            byte[] byteMsg = new byte[memoryStream.Length];
+            byteMsg = memoryStream.GetBuffer();
+            return byteMsg;
+
+        }
+
+
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private static AccountTemplate Deserialize(byte[] data)
         {
             MemoryStream ms = new MemoryStream();
             ms.Write(data, 0, data.Length);
@@ -78,6 +105,27 @@ namespace WheiChatServer
             Object objectTry = b.Deserialize(ms);
             AccountTemplate template = objectTry as AccountTemplate;
             return template;
+        }
+
+
+        private int QueryTheDatabase(AccountTemplate account)
+        {
+            try
+            {
+                string connectionString = "";
+                string commandText = "";
+                SqlConnection sqlConnection = new SqlConnection(connectionString);
+                SqlCommand sqlCommand = new SqlCommand();
+                sqlCommand.Connection = sqlConnection;
+                sqlCommand.CommandText = commandText;
+                sqlCommand.Connection.Open();
+                int i = sqlCommand.ExecuteNonQuery();
+                return i;
+            }
+            catch
+            {
+                return -1;
+            }
         }
     }
     class StateObject
