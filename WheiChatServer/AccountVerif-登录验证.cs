@@ -42,7 +42,7 @@ namespace WheiChatServer
                 try
                 {
                     Socket socketClient = listener.Accept();
-                    StateObject stateObject = new StateObject();
+                    StateObject1 stateObject = new StateObject1();
                     stateObject.client = socketClient;
                     Task clientTask = new Task(new Action<object>(ReceiveData), stateObject);
                     clientTask.Start();
@@ -57,13 +57,30 @@ namespace WheiChatServer
         private void ReceiveData(object obj)
         {
 
-            StateObject state = obj as StateObject;
+            StateObject1 state = obj as StateObject1;
             try
             {
                 int lenght = -1;
                 lenght = state.client.Receive(state.buffer);
                 AccountTemplate template = new AccountTemplate();
                 template = Deserialize(state.buffer);
+                int i = QueryTheDatabase(template);
+                byte[] vs = new byte[1];
+                vs[0] = Convert.ToByte(i);
+                state.client.BeginSend(vs, 0, 1, SocketFlags.None, new AsyncCallback(SendData), state);
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        private void SendData(IAsyncResult ar)
+        {
+            try
+            {
+                StateObject1 state = (StateObject1)ar.AsyncState;
+                state.client.EndSend(ar);
             }
             catch
             {
@@ -112,12 +129,14 @@ namespace WheiChatServer
         {
             try
             {
-                string connectionString = "";
-                string commandText = "";
+                string connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=.\UserDatabase.mdf;Integrated Security=True";
+                string commandText = "AccountVerif";
                 SqlConnection sqlConnection = new SqlConnection(connectionString);
                 SqlCommand sqlCommand = new SqlCommand();
                 sqlCommand.Connection = sqlConnection;
                 sqlCommand.CommandText = commandText;
+                sqlCommand.Parameters.Add(new SqlParameter("@account", System.Data.SqlDbType.VarChar, 50));
+                sqlCommand.Parameters.Add(new SqlParameter("@password", System.Data.SqlDbType.VarChar, 50));
                 sqlCommand.Connection.Open();
                 int i = sqlCommand.ExecuteNonQuery();
                 return i;
@@ -128,7 +147,7 @@ namespace WheiChatServer
             }
         }
     }
-    class StateObject
+    class StateObject1
     {
         public Socket client;
         public const int bufferSize = 256;
